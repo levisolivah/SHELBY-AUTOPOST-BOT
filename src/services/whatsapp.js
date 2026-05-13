@@ -6,157 +6,40 @@ DisconnectReason
 } = require("@whiskeysockets/baileys");
 
 const P = require("pino");
+const { Boom } = require("@hapi/boom");
 
-const {
-Boom
-} = require("@hapi/boom");
-
-const {
-handleCommand
-} = require("./commandHandler");
-
-const safeListener =
-require("./safeListener");
-
-/*
-START WHATSAPP
-*/
 async function startWhatsApp() {
 
-const {
-state,
-saveCreds
-} =
-await useMultiFileAuthState(
-"./session"
-);
+const { state, saveCreds } =
+await useMultiFileAuthState("./session");
 
-/*
-LATEST VERSION
-*/
-const {
-version
-} =
+const { version } =
 await fetchLatestBaileysVersion();
 
-/*
-SOCKET
-*/
-const sock =
-makeWASocket({
-
+const sock = makeWASocket({
 version,
-
-logger:
-P({
-level: "silent"
-}),
-
+logger: P({ level: "silent" }),
 printQRInTerminal: false,
-
 auth: state,
-
-browser: [
-"Shelby",
-"Chrome",
-"1.0.0"
-]
-
+browser: ["Shelby", "Chrome", "1.0.0"]
 });
 
-/*
-SAVE CREDS
-*/
-sock.ev.on(
-"creds.update",
-saveCreds
-);
+sock.ev.on("creds.update", saveCreds);
 
-/*
-MESSAGES
-*/
-sock.ev.on(
-"messages.upsert",
-async ({
-messages
-}) => {
-
-try {
-
-const msg =
-messages[0];
-
-if (!msg) {
-return;
-}
-
-if (
-msg.key.remoteJid ===
-"status@broadcast"
-) {
-return;
-}
-
-/*
-COMMANDS
-*/
-await handleCommand(
-sock,
-msg
-);
-
-/*
-SAFE MODE
-*/
-await safeListener(
-sock,
-msg
-);
-
-} catch (err) {
-
-console.log(
-"MESSAGE ERROR:",
-err.message
-);
-
-}
-
-}
-);
-
-/*
-CONNECTION
-*/
 sock.ev.on(
 "connection.update",
-async ({
-connection,
-lastDisconnect
-}) => {
+async ({ connection, lastDisconnect }) => {
 
-/*
-PAIRING CODE
-*/
-if (
-connection === "connecting"
-&& !state.creds.registered
-) {
+if (!state.creds.registered) {
 
 try {
 
-const phoneNumber =
-"254756275893";
+const phoneNumber = "254756275893";
 
 const code =
-await sock.requestPairingCode(
-phoneNumber
-);
+await sock.requestPairingCode(phoneNumber);
 
-console.log(
-"PAIRING CODE:",
-code
-);
+console.log("PAIRING CODE:", code);
 
 } catch (err) {
 
@@ -169,31 +52,17 @@ err.message
 
 }
 
-/*
-CONNECTED
-*/
-if (
-connection === "open"
-) {
+if (connection === "open") {
 
-console.log(
-"✅ WhatsApp Connected"
-);
+console.log("✅ WHATSAPP CONNECTED");
 
 }
 
-/*
-DISCONNECTED
-*/
-if (
-connection === "close"
-) {
+if (connection === "close") {
 
 const statusCode =
-new Boom(
-lastDisconnect?.error
-)?.output
-?.statusCode;
+new Boom(lastDisconnect?.error)
+?.output?.statusCode;
 
 console.log(
 "❌ Connection closed:",
@@ -205,18 +74,16 @@ statusCode !==
 DisconnectReason.loggedOut
 ) {
 
-setTimeout(
-() => {
+setTimeout(() => {
 startWhatsApp();
-},
-5000
+}, 5000);
+
+}
+
+}
+
+}
 );
-
-}
-
-}
-
-});
 
 return sock;
 
