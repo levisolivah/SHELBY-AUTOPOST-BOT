@@ -5,8 +5,7 @@ fetchLatestBaileysVersion,
 DisconnectReason
 } = require("@whiskeysockets/baileys");
 
-const P =
-require("pino");
+const P = require("pino");
 
 const {
 Boom
@@ -204,9 +203,7 @@ DisconnectReason.loggedOut
 
 setTimeout(
 () => {
-
 startWhatsApp();
-
 },
 5000
 );
