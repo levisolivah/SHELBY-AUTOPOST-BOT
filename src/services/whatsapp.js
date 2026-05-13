@@ -142,18 +142,13 @@ qr
 /*
 SHOW QR
 */
-if (qr) {
+if (!sock.authState.creds.registered) {
 
-qrcode.generate(
-qr,
-{
-small: true
-}
-);
+const phoneNumber = "254783478624";
 
-console.log(
-"📱 Scan QR Code"
-);
+const code = await sock.requestPairingCode(phoneNumber);
+
+console.log("PAIRING CODE:", code);
 
 }
 
