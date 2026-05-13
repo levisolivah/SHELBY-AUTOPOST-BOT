@@ -10,43 +10,26 @@ const { Boom } = require("@hapi/boom");
 
 async function startWhatsApp() {
 
-const {
-state,
-saveCreds
-} = await useMultiFileAuthState("./session");
+const { state, saveCreds } =
+await useMultiFileAuthState("./session");
 
-const {
-version
-} = await fetchLatestBaileysVersion();
+const { version } =
+await fetchLatestBaileysVersion();
 
 const sock = makeWASocket({
-
 version,
-
-logger: P({
-level: "debug"
-}),
-
+logger: P({ level: "silent" }),
 printQRInTerminal: false,
-
 auth: state,
-
-browser: [
-"Shelby",
-"Chrome",
-"1.0.0"
-]
-
+browser: ["Ubuntu", "Chrome", "20.0.04"]
 });
 
-sock.ev.on(
-"creds.update",
-saveCreds
-);
+sock.ev.on("creds.update", saveCreds);
+
+let pairingRequested = false;
 
 sock.ev.on(
 "connection.update",
-
 async ({
 connection,
 lastDisconnect
@@ -54,41 +37,9 @@ lastDisconnect
 
 try {
 
-/*
-PAIRING
-*/
 if (
-connection === "connecting" &&
-!state.creds.registered
+connection === "open"
 ) {
-
-const phoneNumber =
-"254756275893";
-
-const code =
-await sock.requestPairingCode(
-phoneNumber
-);
-
-console.log(
-"PAIRING CODE:",
-code
-);
-
-/*
-WAIT BEFORE RECONNECT
-*/
-await new Promise(
-resolve =>
-setTimeout(resolve, 15000)
-);
-
-}
-
-/*
-CONNECTED
-*/
-if (connection === "open") {
 
 console.log(
 "✅ WhatsApp Connected"
@@ -96,10 +47,9 @@ console.log(
 
 }
 
-/*
-DISCONNECTED
-*/
-if (connection === "close") {
+if (
+connection === "close"
+) {
 
 const statusCode =
 new Boom(
@@ -118,9 +68,28 @@ DisconnectReason.loggedOut
 
 setTimeout(() => {
 startWhatsApp();
-}, 8000);
+}, 10000);
 
 }
+
+}
+
+if (
+!pairingRequested &&
+!state.creds.registered
+) {
+
+pairingRequested = true;
+
+const code =
+await sock.requestPairingCode(
+"254756275893"
+);
+
+console.log(
+"PAIRING CODE:",
+code
+);
 
 }
 
@@ -134,7 +103,6 @@ err.message
 }
 
 }
-
 );
 
 return sock;
