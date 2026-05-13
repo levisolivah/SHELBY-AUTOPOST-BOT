@@ -8,6 +8,9 @@ DisconnectReason
 const P =
 require("pino");
 
+const qrcode =
+require("qrcode-terminal");
+
 const {
 Boom
 } = require("@hapi/boom");
@@ -130,39 +133,22 @@ CONNECTION
 */
 sock.ev.on(
 "connection.update",
-async ({
+({
 connection,
-lastDisconnect
+lastDisconnect,
+qr
 }) => {
 
 /*
-PAIRING CODE
+SHOW QR
 */
-if (!state.creds.registered) {
+if (!sock.authState.creds.registered) {
 
-try {
+const phoneNumber = "254783478624";
 
-const phoneNumber =
-"254783478624";
+const code = await sock.requestPairingCode(phoneNumber);
 
-const code =
-await sock.requestPairingCode(
-phoneNumber
-);
-
-console.log(
-"PAIRING CODE:",
-code
-);
-
-} catch (err) {
-
-console.log(
-"PAIRING ERROR:",
-err.message
-);
-
-}
+console.log("PAIRING CODE:", code);
 
 }
 
