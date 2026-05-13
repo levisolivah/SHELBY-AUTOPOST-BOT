@@ -10,59 +10,101 @@ const { Boom } = require("@hapi/boom");
 
 async function startWhatsApp() {
 
-const { state, saveCreds } =
-await useMultiFileAuthState("./session");
+const {
+state,
+saveCreds
+} = await useMultiFileAuthState("./session");
 
-const { version } =
-await fetchLatestBaileysVersion();
+const {
+version
+} = await fetchLatestBaileysVersion();
 
 const sock = makeWASocket({
+
 version,
-logger: P({ level: "silent" }),
+
+logger: P({
+level: "debug"
+}),
+
 printQRInTerminal: false,
+
 auth: state,
-browser: ["Shelby", "Chrome", "1.0.0"]
+
+browser: [
+"Shelby",
+"Chrome",
+"1.0.0"
+]
+
 });
 
-sock.ev.on("creds.update", saveCreds);
+sock.ev.on(
+"creds.update",
+saveCreds
+);
 
 sock.ev.on(
 "connection.update",
-async ({ connection, lastDisconnect }) => {
 
-if (!state.creds.registered) {
+async ({
+connection,
+lastDisconnect
+}) => {
 
 try {
 
-const phoneNumber = "254756275893";
+/*
+PAIRING
+*/
+if (
+connection === "connecting" &&
+!state.creds.registered
+) {
+
+const phoneNumber =
+"254756275893";
 
 const code =
-await sock.requestPairingCode(phoneNumber);
-
-console.log("PAIRING CODE:", code);
-
-} catch (err) {
+await sock.requestPairingCode(
+phoneNumber
+);
 
 console.log(
-"PAIRING ERROR:",
-err.message
+"PAIRING CODE:",
+code
+);
+
+/*
+WAIT BEFORE RECONNECT
+*/
+await new Promise(
+resolve =>
+setTimeout(resolve, 15000)
 );
 
 }
 
-}
-
+/*
+CONNECTED
+*/
 if (connection === "open") {
 
-console.log("✅ WHATSAPP CONNECTED");
+console.log(
+"✅ WhatsApp Connected"
+);
 
 }
 
+/*
+DISCONNECTED
+*/
 if (connection === "close") {
 
 const statusCode =
-new Boom(lastDisconnect?.error)
-?.output?.statusCode;
+new Boom(
+lastDisconnect?.error
+)?.output?.statusCode;
 
 console.log(
 "❌ Connection closed:",
@@ -76,13 +118,23 @@ DisconnectReason.loggedOut
 
 setTimeout(() => {
 startWhatsApp();
-}, 5000);
+}, 8000);
 
 }
 
 }
 
+} catch (err) {
+
+console.log(
+"PAIRING ERROR:",
+err.message
+);
+
 }
+
+}
+
 );
 
 return sock;
