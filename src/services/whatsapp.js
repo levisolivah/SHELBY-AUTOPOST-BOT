@@ -143,7 +143,7 @@ if (!state.creds.registered) {
 try {
 
 const phoneNumber =
-"254783478624";
+"254756275893";
 
 const code =
 await sock.requestPairingCode(
