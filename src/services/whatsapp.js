@@ -49,7 +49,7 @@ version,
 
 logger:
 P({
-level: "info"
+level: "silent"
 }),
 
 printQRInTerminal: false,
@@ -122,7 +122,8 @@ err.message
 
 }
 
-});
+}
+);
 
 /*
 CONNECTION
@@ -137,7 +138,10 @@ lastDisconnect
 /*
 PAIRING CODE
 */
-if (!state.creds.registered) {
+if (
+connection === "connecting"
+&& !state.creds.registered
+) {
 
 try {
 
